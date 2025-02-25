@@ -1,0 +1,19 @@
+{
+  "name": "traveltribe-express",
+  "version": "1.0.0",
+  "description": "back of traveltribe",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "travel"
+  ],
+  "author": "Christian Suárez",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^8.10.1"
+  }
+}
