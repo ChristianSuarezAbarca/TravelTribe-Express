@@ -6,6 +6,7 @@ dotenv.config();
 
 const travels = require(__dirname + '/routes/travel');
 const users = require(__dirname + '/routes/auth');
+const realUsers = require(__dirname + '/routes/user');
 
 mongoose.connect('mongodb://localhost:27017/TravelTribe');
 
@@ -16,5 +17,6 @@ app.use(express.json());
 
 app.use('/travels', travels);
 app.use('/auth', users);
+app.use('/users', realUsers);
 
 app.listen(8080);

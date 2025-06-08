@@ -57,6 +57,7 @@ router.post("/register", async (req, res) => {
 			number: req.body.number,
 			password: hashedPassword,
 			rol: "client",
+			avatar: "logo.png"
 		});
 
 		const result = await nuevoUser.save();
@@ -79,6 +80,28 @@ router.post('/validate', (req, res) => {
 	} catch (error) {
 		return res.status(400).json({ error: 'Token inválido o expirado' });
 	}
+});
+
+router.get('/fieldUnique', async (req, res) => {
+
+	let exists = false;
+	switch (req.query.field) {
+		case 'username':
+			exists = !!(await User.findOne({ username: req.query.value }));
+			break;
+		case 'gmail':
+			exists = !!(await User.findOne({ email: req.query.value }));
+			break;
+		case 'number':
+			exists = !!(await User.findOne({ number: req.query.value }));
+			break;
+	}
+
+	return res.json(exists);
+});
+
+router.get('/me', auth.protegerRuta(['admin', 'client']), (req, res) => {
+    res.json(req.user);
 });
 
 module.exports = router;

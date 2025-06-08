@@ -44,14 +44,7 @@ router.get('/find', auth.protegerRuta(["admin", "client"]), async (req, res) => 
 
 router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
     try{
-        const userId = req.user.id;
-        const patientId = req.params.id;
-
-        if (req.user.rol === 'user' && userId !== patientId) {
-            return res.status(403).send({ error: "Acceso no autorizado" });
-        }
-
-        const result = await Patient.findById(req.params.id)
+        const result = await Travel.findById(req.params.id)
 
         if(result)
             res.status(200).send({ result: result });

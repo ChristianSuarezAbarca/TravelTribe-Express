@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const dotenv = require("dotenv");
+const User = require("../models/user");
 dotenv.config();
 
 let generarToken = (username, rol, id) => {
@@ -26,8 +27,8 @@ let protegerRuta = (rolesPermitidos) => {
 
             if (resultado && rolesPermitidos.includes(resultado.rol)) {
                 const user = await User.findById(resultado.id).select('-password');
-                if (!usuario) return res.status(404).send({ error: 'Usuario no encontrado' });
-
+                if (!user) return res.status(404).send({ error: 'Usuario no encontrado' });
+                req.user = user;
                 next();
             } else {
                 res.status(403).send({ error: "Acceso no autorizado" });

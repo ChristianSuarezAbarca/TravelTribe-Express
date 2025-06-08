@@ -1,13 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const Travel = require('../models/travel');
+const User = require('../models/user');
 const auth = require(__dirname + '/../auth/auth.js');
+const bcrypt = require("bcrypt");
 
 const router = express.Router();
+const saltRounds = 10;
 
 router.get("/", async (req, res) => {
     try {
-        const result = await Travel.find();
+        const result = await User.find();
 
         if (result.length === 0) {
             return res.status(404).send({ error: "No se encontraron viajes" });
@@ -43,7 +45,7 @@ router.get('/find', auth.protegerRuta(["admin", "client"]), async (req, res) => 
 });
 
 router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
-    try{
+    try {
         const userId = req.user.id;
         const patientId = req.params.id;
 
@@ -53,7 +55,7 @@ router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
 
         const result = await Patient.findById(req.params.id)
 
-        if(result)
+        if (result)
             res.status(200).send({ result: result });
         else
             res.status(404).send({ error: "No se encontraron travel" });
@@ -63,7 +65,7 @@ router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
 });
 
 router.post('/', auth.protegerRuta(["admin", "client"]), async (req, res) => {
-    try{
+    try {
         let nuevoPatient = new Patient({
             name: req.body.name,
             surname: req.body.surname,
@@ -71,44 +73,61 @@ router.post('/', auth.protegerRuta(["admin", "client"]), async (req, res) => {
             address: req.body.address,
             insuranceNumber: req.body.insuranceNumber
         });
-    
+
         const result = await nuevoPatient.save()
         res.status(201).send({ result: result });
-    } catch(error) {
-        res.status(400).send({ error: error.message });
+    } catch (error) {
+        res.status(400).send({ error: "Error interno del servidor" });
     }
 });
 
 router.put('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).send({ error: "Error actualizando los datos del travel" });
+        return res.status(400).send({ error: "Error actualizando los datos del user" });
     }
+    let result = '';
 
-    try{
-        const result = await Patient.findByIdAndUpdate(req.params.id, {
-            $set: {
-                name: req.body.name,
-                surname: req.body.surname,
-                birthDate: req.body.birthDate,
-                address: req.body.address,
-                insuranceNumber: req.body.insuranceNumber
-            }
-        }, { 
-            new: true,
-            runValidators: true
-        });
+    try {
+        switch (req.query.type) {
+            case "normal":
+                result = await User.findByIdAndUpdate(req.params.id, {
+                    $set: {
+                        name: req.body.name,
+                        username: req.body.username,
+                        email: req.body.email,
+                        number: req.body.number,
+                    }
+                }, {
+                    new: true,
+                    runValidators: true
+                });
+                break;
+            case "password":
+                result = await User.findByIdAndUpdate(req.params.id, {
+                    $set: {
+                        password: await bcrypt.hash(req.body.password, saltRounds),
+                    }
+                }, {
+                    new: true,
+                    runValidators: true
+                });
+                break;
+            case "avatar":
+
+                break;
+        }
 
         if (!result) {
-            return res.status(400).send({ error: "Error actualizando los datos del travel" });
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
         }
 
         res.status(200).send({ result: result });
-    } catch(error) {
+    } catch (error) {
         if (error.name === "ValidationError") {
-            return res.status(400).send({ error: "Error actualizando los datos del travel" });
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
         }
-        res.status(500).send({ error:"Error interno del servidor" });
+        res.status(500).send({ error: error.message });
     }
 });
 
