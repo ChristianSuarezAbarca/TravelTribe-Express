@@ -12,33 +12,10 @@ router.get("/", async (req, res) => {
         const result = await User.find();
 
         if (result.length === 0) {
-            return res.status(404).send({ error: "No se encontraron viajes" });
+            return res.status(404).send({ error: "No se encontraron users" });
         }
 
-        res.status(200).send({ travels: result });
-    } catch (error) {
-        res.status(500).send({ error: "Error interno del servidor" });
-    }
-});
-
-router.get('/find', auth.protegerRuta(["admin", "client"]), async (req, res) => {
-    try {
-        const surname = req.query.surname;
-
-        if (!surname) {
-            const patients = await Patient.find();
-            return res.status(200).send({ result: patients });
-        }
-
-        const result = await Patient.find({
-            surname: { $regex: surname, $options: 'i' }
-        });
-
-        if (result.length === 0) {
-            return res.status(404).send({ error: "No se ha encontrado ningun travel con esos criterios" });
-        }
-
-        res.status(200).send({ result: result });
+        res.status(200).send(result);
     } catch (error) {
         res.status(500).send({ error: "Error interno del servidor" });
     }
@@ -64,20 +41,161 @@ router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
     }
 });
 
-router.post('/', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+router.put('/addOrRemoveSaved', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+    let result = '';
+
     try {
-        let nuevoPatient = new Patient({
-            name: req.body.name,
-            surname: req.body.surname,
-            birthDate: req.body.birthDate,
-            address: req.body.address,
-            insuranceNumber: req.body.insuranceNumber
+        if (req.body.saveOrUnsave === 'save') {
+            result = await User.findByIdAndUpdate(req.body.userId, {
+                $push: {
+                    travelInteractions: {
+                        type: "saved",
+                        travel: req.body.travelId
+                    }
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+        else {
+            result = await User.findByIdAndUpdate(req.body.userId, {
+                $pull: {
+                    travelInteractions: {
+                        type: "saved",
+                        travel: req.body.travelId
+                    }
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+
+        if (!result) {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+
+        res.status(200).send(result);
+    } catch (error) {
+        if (error.name === "ValidationError") {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+        res.status(500).send({ error: error.message });
+    }
+});
+
+router.put('/addOrRemoveBought', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+    let result = '';
+
+    try {
+        if (req.body.saveOrUnsave === 'bought') {
+            result = await User.findByIdAndUpdate(req.body.userId, {
+                $push: {
+                    travelInteractions: {
+                        type: "bought",
+                        travel: req.body.travelId
+                    }
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+        else {
+            result = await User.findByIdAndUpdate(req.body.userId, {
+                $pull: {
+                    travelInteractions: {
+                        type: "bought",
+                        travel: req.body.travelId
+                    }
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+
+        if (!result) {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+
+        res.status(200).send(result);
+    } catch (error) {
+        if (error.name === "ValidationError") {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+        res.status(500).send({ error: error.message });
+    }
+});
+
+router.put('/addOrRemoveLiked', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+    let result = '';
+
+    try {
+        if (req.body.likeOrUnlike === 'like') {
+            result = await User.findByIdAndUpdate(req.body.userId, {
+                $push: {
+                    travelInteractions: {
+                        type: "liked",
+                        travel: req.body.travelId
+                    }
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+        else {
+            result = await User.findByIdAndUpdate(req.body.userId, {
+                $pull: {
+                    travelInteractions: {
+                        type: "liked",
+                        travel: req.body.travelId
+                    }
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+
+        if (!result) {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+
+        res.status(200).send(result);
+    } catch (error) {
+        if (error.name === "ValidationError") {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+        res.status(500).send({ error: error.message });
+    }
+});
+
+router.put('/ban', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+    let result = '';
+
+    try {
+        result = await User.findByIdAndUpdate(req.body.id, {
+            $set: {
+                banned: true
+            }
+        }, {
+            new: true,
+            runValidators: true
         });
 
-        const result = await nuevoPatient.save()
-        res.status(201).send({ result: result });
+        if (!result) {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+
+        res.status(200).send(result);
     } catch (error) {
-        res.status(400).send({ error: "Error interno del servidor" });
+        if (error.name === "ValidationError") {
+            return res.status(400).send({ error: "Error actualizando los datos del user" });
+        }
+        res.status(500).send({ error: error.message });
     }
 });
 
@@ -114,7 +232,14 @@ router.put('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
                 });
                 break;
             case "avatar":
-
+                result = await User.findByIdAndUpdate(req.params.id, {
+                    $set: {
+                        avatar: req.body.avatar
+                    }
+                }, {
+                    new: true,
+                    runValidators: true
+                });
                 break;
         }
 
@@ -122,7 +247,7 @@ router.put('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
             return res.status(400).send({ error: "Error actualizando los datos del user" });
         }
 
-        res.status(200).send({ result: result });
+        res.status(200).send(result);
     } catch (error) {
         if (error.name === "ValidationError") {
             return res.status(400).send({ error: "Error actualizando los datos del user" });

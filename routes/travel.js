@@ -19,34 +19,11 @@ router.get("/", async (req, res) => {
     }
 });
 
-router.get('/find', auth.protegerRuta(["admin", "client"]), async (req, res) => {
-    try {
-        const surname = req.query.surname;
-
-        if (!surname) {
-            const patients = await Patient.find();
-            return res.status(200).send({ result: patients });
-        }
-
-        const result = await Patient.find({
-            surname: { $regex: surname, $options: 'i' }
-        });
-
-        if (result.length === 0) {
-            return res.status(404).send({ error: "No se ha encontrado ningun travel con esos criterios" });
-        }
-
-        res.status(200).send({ result: result });
-    } catch (error) {
-        res.status(500).send({ error: "Error interno del servidor" });
-    }
-});
-
 router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
-    try{
+    try {
         const result = await Travel.findById(req.params.id)
 
-        if(result)
+        if (result)
             res.status(200).send({ result: result });
         else
             res.status(404).send({ error: "No se encontraron travel" });
@@ -56,52 +33,88 @@ router.get('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
 });
 
 router.post('/', auth.protegerRuta(["admin", "client"]), async (req, res) => {
-    try{
-        let nuevoPatient = new Patient({
-            name: req.body.name,
-            surname: req.body.surname,
-            birthDate: req.body.birthDate,
-            address: req.body.address,
-            insuranceNumber: req.body.insuranceNumber
+    try {
+        let newTravel = new Travel({
+            title: req.body.title,
+            description: req.body.description,
+            maxPeople: req.body.maxPeople,
+            minAge: req.body.minAge,
+            temperature: req.body.temperature,
+            images: req.body.images,
+            likes: req.body.likes,
+            rate: req.body.rate,
+            difficulty: req.body.difficulty,
+            category: req.body.category,
+            keywords: req.body.keywords,
+            activities: req.body.activities,
+            location: {
+                country: req.body.location?.country,
+                city: req.body.location?.city,
+                coordinates: {
+                    lat: req.body.location?.coordinates?.lat,
+                    lng: req.body.location?.coordinates?.lng
+                }
+            },
+            price: {
+                adultPrice: req.body.price?.adultPrice,
+                childPrice: req.body.price?.childPrice
+            },
+            date: {
+                startDate: req.body.date?.startDate,
+                endDate: req.body.date?.endDate
+            },
+            logistics: {
+                transport: req.body.logistics?.transport,
+                hotel: req.body.logistics?.hotel
+            },
+            include: {
+                includes: req.body.include?.includes,
+                notIncludes: req.body.include?.notIncludes
+            }
         });
-    
-        const result = await nuevoPatient.save()
+
+        const result = await newTravel.save()
         res.status(201).send({ result: result });
-    } catch(error) {
+    } catch (error) {
         res.status(400).send({ error: error.message });
     }
 });
 
-router.put('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+router.put('/addOrRemoveLike', auth.protegerRuta(["admin", "client"]), async (req, res) => {
+    let result = '';
 
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).send({ error: "Error actualizando los datos del travel" });
-    }
-
-    try{
-        const result = await Patient.findByIdAndUpdate(req.params.id, {
-            $set: {
-                name: req.body.name,
-                surname: req.body.surname,
-                birthDate: req.body.birthDate,
-                address: req.body.address,
-                insuranceNumber: req.body.insuranceNumber
-            }
-        }, { 
-            new: true,
-            runValidators: true
-        });
+    try {
+        if (req.body.likeOrUnlike === "like") {
+            result = await Travel.findByIdAndUpdate(req.body.travel._id, {
+                $set: {
+                    likes: req.body.travel.likes + 1
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
+        else {
+            result = await Travel.findByIdAndUpdate(req.body.travel._id, {
+                $set: {
+                    likes: req.body.travel.likes - 1
+                }
+            }, {
+                new: true,
+                runValidators: true
+            });
+        }
 
         if (!result) {
             return res.status(400).send({ error: "Error actualizando los datos del travel" });
         }
 
-        res.status(200).send({ result: result });
-    } catch(error) {
+        res.status(200).send({ likes: result.likes });
+    } catch (error) {
         if (error.name === "ValidationError") {
             return res.status(400).send({ error: "Error actualizando los datos del travel" });
         }
-        res.status(500).send({ error:"Error interno del servidor" });
+        res.status(500).send({ error: error.message });
     }
 });
 
@@ -111,13 +124,13 @@ router.delete('/:id', auth.protegerRuta(["admin", "client"]), async (req, res) =
     }
 
     try {
-        const result = await Patient.findByIdAndDelete(req.params.id);
+        const result = await Travel.findByIdAndDelete(req.params.id);
 
         if (!result) {
             return res.status(404).send({ error: "El travel a eliminar no existe" });
         }
 
-        res.status(200).send({ result: result });
+        res.status(200).send(result._id);
     } catch (error) {
         res.status(500).send({ error: "Error interno del servidor" });
     }

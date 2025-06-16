@@ -13,7 +13,7 @@ mongoose.connect('mongodb://localhost:27017/TravelTribe');
 let app = express();
 
 app.use(cors({ origin: 'http://localhost:4200' }));
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 app.use('/travels', travels);
 app.use('/auth', users);

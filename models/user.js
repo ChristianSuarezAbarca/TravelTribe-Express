@@ -34,6 +34,9 @@ let userSchema = new mongoose.Schema({
     avatar: {
         type: String
     },
+    banned: {
+        type: Boolean
+    },
     travelInteractions: [{
         travel: { type: mongoose.Schema.Types.ObjectId, ref: 'travels', required: true },
         type: { type: String, enum: ['liked', 'saved', 'bought'], required: true }

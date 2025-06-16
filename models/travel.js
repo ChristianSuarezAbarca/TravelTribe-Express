@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 let travelSchema = new mongoose.Schema({
-    title: { type: String, required: true, unique: true, minlength: 4, maxlength: 30 },
+    title: { type: String, required: true, minlength: 4, maxlength: 30 },
     description: { type: String, required: true, minlength: 20, maxlength: 400 },
     maxPeople: { type: Number, required: true, min: 0 },
     minAge: { type: Number, required: true, min: 0 },
